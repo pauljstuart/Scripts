@@ -1,0 +1,34 @@
+
+COLUMN ATTRIBUTES FORMAT A50
+COLUMN window_name FORMAT A30
+COLUMN client_name FORMAt A40
+column job_name format A20
+column job_INFO FORMAT a30
+
+alter session set NLS_TIMESTAMP_TZ_FORMAT = "DD/MM/YY HH24:MI:SS";
+
+
+
+select * from DBA_AUTOTASK_CLIENT;
+
+
+SELECT * FROM DBA_AUTOTASK_CLIENT_JOB;
+
+
+
+
+
+SELECT * FROM DBA_AUTOTASK_OPERATION;
+
+
+SELECT  * FROM DBA_AUTOTASK_SCHEDULE;
+
+
+SELECT * FROM DBA_AUTOTASK_TASK;
+
+prompt : DBA_AUTOTASK_JOB_HISTORY 
+
+
+
+select * from DBA_AUTOTASK_JOB_HISTORY
+order by client_name, window_start_time;
