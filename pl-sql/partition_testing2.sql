@@ -1,0 +1,73 @@
+clear screen
+
+
+
+
+
+------------------------------------------------------------------------------------------------
+
+
+drop table instrument_pjs;
+CREATE TABLE INSTRUMENT_PJS 
+   (	WORKFLOW_ID NUMBER(38,0) NOT NULL ENABLE, 
+	    INSTRUMENT_SOURCE VARCHAR2(4 CHAR) , 
+    	INSTRUMENT_ID VARCHAR2(30 CHAR) ,
+      acol1 number default 1
+   ) 
+PARTITION BY LIST (WORKFLOW_ID) 
+ ( 
+ PARTITION WORKFLOW11229  VALUES (11229)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11230  VALUES (11230)    TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11231  VALUES (11231)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11232  VALUES (11232)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11233  VALUES (11233)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11234  VALUES (11234)    TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11235  VALUES (11235)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11236  VALUES (11236)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11237  VALUES (11237)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11238  VALUES (11238)     TABLESPACE MERIDIAN_DATA,
+ PARTITION WORKFLOW11239  VALUES (11239)     TABLESPACE MERIDIAN_DATA   
+ ) ;
+
+
+set serveroutput on
+DECLARE
+
+  i NUMBER;
+  j NUMBER;
+  iNumberofRows   NUMBER;
+BEGIN
+
+FOR i in 11229..11239
+LOOP
+
+  DBMS_OUTPUT.PUT_LINE('Setting up partition WORKFLOW' || i );
+  
+  --iNumberofRows := round(DBMS_RANDOM.VALUE(1, 50000));
+  iNumberofRows := 1;
+  DBMS_OUTPUT.PUT_LINE('Entering ' || iNumberofRows || ' rows into WORKFLOW' || i);
+
+  FOR j in 1..iNumberofRows
+    LOOP
+    insert into INSTRUMENT_PJS (workflow_id) values( i );
+    END LOOP;
+  commit;
+
+END LOOP;
+
+END;
+/
+
+
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+
+alter table instrument_pjs add partition  WORKFLOW11395  VALUES (11395)     TABLESPACE MERIDIAN_DATA;
+
+insert into INSTRUMENT_PJS (11395) values( 11395 );
+insert into INSTRUMENT_PJS (11395) values( 11395 );
+
+
