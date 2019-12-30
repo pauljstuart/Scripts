@@ -1,0 +1,11 @@
+
+Bloom filter 
+In Oracle Database 10g we introduced the concept of bloom filtering. When two tables are joined via a hash join, the first table (typically the smaller table) is scanned and the rows that satisfy the ‘where’ clause predicates (for that table) are used to create a hash table. During the hash table creation a bit vector or bloom filter is also created based on the join column. The bit vector is then sent as an additional predicate to the second table scan. After the ‘‘where’ clause predicates have been applied to the second table scan, the resulting rows will have their join column hashed and it will be compared to values in the bit vector. If a match is found in the bit vector that row will be sent to the hash join. If no match is found then the row will be disregarded. On Exadata the bloom filter or bit vector is passed as an additional predicate so it will be overloaded to the storage cells making bloom filtering very efficient 
+
+Restrictions on Bloom Filters 
+However in 11.1.0.7 there are some restrictions on when bloom filtering will kick in. The plan must be a fully parallel plan and not a partition-wise join. So it may become necessary to put a low degree of parallelism on small lookup tables and indexes to take advantage of bloom filtering. 
+One of the most common cases where we see bloom filtering being disabled occurs when there is an index on the smaller table. If the optimizer selects an index range scan of that index then it will be done in serial and not parallel. Thus preventing a bloom filter being created. Potential workarounds in 11.1.0.7 would be to mark the index invisible or drop the index in question. Bug 7199035 was filed for this and the restriction of having a parallel left hand side of the hash join has been lifted in 11.2. 
+
+Identifying a Bloom Filter in an Execution plan 
+You can identify a bloom filter in a plan when you see :BF0000 in the Name column of the execution plan.
+
