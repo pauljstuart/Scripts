@@ -1,0 +1,101 @@
+CREATE OR REPLACE PACKAGE DBHC_PKG
+AS
+  ----------------------------------------------------------------------------
+  --  NAME:      DBHC_PKG
+  --  PURPOSE:   This package contains the code for the Database Health Check
+  --  AUTHOR :   Paul Stuart
+  --  REQUIREMENTS :  EXECUTE on UTL_SMTP
+  --                  EXECUTE on DBMS_LOB
+  --                  EXECUTE on UTL_TCP
+  --
+  --    CHANGE HISTORY :
+  --
+  --    Date        By             Version     Description
+  --   ----------- --------------  ----------- --------------------------------------
+  --   30-Apr-2020 Paul Stuart      1.0         Q2 2020 - First Release 
+  --   04-Jun-2020 Paul Stuart      1.1         June 2020 
+  --   03-Sep-2020 Paul Stuart      1.2         Sept 2020 
+  --
+  --
+  ----------------------------------------------------------------------------
+
+
+   -- LOGGING LEVELS
+   DEBUG INTEGER := 3;
+   INFO INTEGER := 2;
+   ERROR INTEGER := 1;
+
+   -- GLOBAL VARIABLES
+  global_this_database  VARCHAR2(128);
+  global_open_mode VARCHAR2(128);
+  global_db_version INTEGER;
+  global_this_environment VARCHAR2(128);
+  global_schema_name VARCHAR2(128) ;
+  global_DBHC_version  NUMBER;
+  global_smtp_host VARCHAR2(1024); 
+  global_smtp_port INTEGER;
+  global_smtp_maxsize_bytes INTEGER := 200000;  -- this is just the initial value
+  global_smtp_from VARCHAR2(1024);
+  global_smtp_ACL VARCHAR2(1024);
+  global_database_role VARCHAR2(1024);
+  global_max_partition_days_mast INTEGER ;   -- the oldest time in days to keep partition data on the MASTER
+  global_max_partition_days_host INTEGER ;  -- the oldest time in days to keep partition data on the HOSTs
+  global_default_admin VARCHAR2(1024);
+  global_log_level INTEGER := INFO;  -- this is just the initial value.  It's set for the database in the INITIALISE procedure.
+  global_writable_database INTEGER;
+
+  -- these global VARRAYs contain lists of all the tables and package used by the DBHC
+  TYPE tableRecords is TABLE of varchar2(255) ;
+  V_TABLE_LIST tableRecords := tableRecords('DBHC_CHECKS','DBHC_DATABASES','DBHC_VARIABLES','DBHC_ALERTS', 'DBHC_LOG','DBHC_SQL','DBHC_SUPPRESS');
+  V_VIEW_LIST  tableRecords := tableRecords('DBHC_THISDB_CHECKS','DBHC_THISDB_VARIABLES','DBHC_THISDB_ALERTS','DBHC_THISDB_LOG');
+  V_PACKAGE_LIST tableRecords := tableRecords('DBHC_PKG');
+  V_PRIVILEGE_LIST tableRecords := tableRecords('CREATE JOB','CREATE TABLE','CREATE PROCEDURE','CREATE VIEW','SELECT ANY DICTIONARY');
+  V_ROLE_LIST tableRecords := tableRecords('SELECT_CATALOG_ROLE');
+  V_ACL_LIST tableRecords := tableRecords('connect','resolve');
+
+  PROCEDURE INITIALISE; 
+  PROCEDURE CREATE_CHECKS ;
+  PROCEDURE DEPLOY_DBHC_HOST ( p_USERID VARCHAR2, p_PASSWORD VARCHAR2, p_DATABASE_NAME VARCHAR2);
+  PROCEDURE DEPLOY_DBHC_MASTER ( p_USERID VARCHAR2, p_PASSWORD VARCHAR2, p_DATABASE_NAME VARCHAR2);
+  PROCEDURE RUN_CHECK( i_check_no INTEGER );
+  PROCEDURE DROP_CHECKS;
+  PROCEDURE ENABLE_CHECKS;
+  PROCEDURE DISABLE_CHECKS( i_check IN INTEGER DEFAULT NULL) ;
+  PROCEDURE STOP_JOB( s_job_name IN VARCHAR2 ) ;
+  PROCEDURE STOP_CHECKS( i_check INTEGER DEFAULT NULL);
+  PROCEDURE PRINT_GLOBAL_VARIABLES;
+  PROCEDURE POPULATE_CSV_ARRAY( s_csv_string in VARCHAR2, t_csv_table OUT tableRecords);
+  PROCEDURE OUTPUT_LOG(   p_process_name in VARCHAR2,  i_log_level INTEGER, p_text in CLOB ,   p_field1 IN VARCHAR2 DEFAULT NULL,  p_field2 IN VARCHAR2 DEFAULT NULL, p_error_code in INTEGER DEFAULT NULL );
+  PROCEDURE LOAD_CONFIGURATION( p_user_id IN VARCHAR2 DEFAULT NULL );
+  PROCEDURE EXPORT_CONFIGURATION;
+  PROCEDURE PRINT_CLOB (      c_target_clob   IN CLOB);
+  PROCEDURE EXECUTE_PLSQL( c_sql_text IN CLOB, p_bind_variables IN VARCHAR2, p_identifier IN VARCHAR2 DEFAULT NULL, c_sql_output OUT CLOB, i_fetches OUT INTEGER );
+  PROCEDURE EXECUTE_PLSQL_REMOTE( c_sql_text IN CLOB, p_bind_variables IN VARCHAR2, p_identifier IN VARCHAR2 DEFAULT NULL, p_remote_db_name IN VARCHAR2, c_sql_output OUT CLOB, i_fetches OUT INTEGER );
+  PROCEDURE REGISTER_ALERT( p_check_no INTEGER, p_check_description VARCHAR2 , p_notification_list VARCHAR2 DEFAULT NULL, p_remote_database_name VARCHAR2 DEFAULT NULL,  p_bind_variables  VARCHAR2 DEFAULT NULL,   p_check_exec_time TIMESTAMP  ,   p_check_elapsed_time  NUMBER DEFAULT NULL ,	c_check_output  CLOB );       
+  PROCEDURE EXECUTE_SQL( c_sql_text IN CLOB, p_bind_variables IN VARCHAR2 DEFAULT NULL, p_identifier IN VARCHAR2 DEFAULT NULL,  c_sql_output OUT CLOB, i_fetches OUT INTEGER );
+  PROCEDURE EXECUTE_SQL_REMOTE( c_sql_text IN CLOB, p_bind_variables IN VARCHAR2, p_remote_db_name IN VARCHAR2,p_identifier IN VARCHAR2,   c_sql_output OUT CLOB, i_fetches OUT INTEGER );
+  PROCEDURE EXECUTE_SQL_REMOTE_WRAPPER( s_sql_text IN VARCHAR2, s_bind_variables IN VARCHAR2,  s_sql_output OUT VARCHAR2, i_fetches OUT INTEGER );
+  PROCEDURE EXECUTE_PLSQL_REMOTE_WRAPPER( s_sql_text IN VARCHAR2, s_bind_variables IN VARCHAR2, s_sql_output OUT VARCHAR2, i_fetches OUT INTEGER );
+  PROCEDURE EXECUTE_REMOTE_CLOB( c_DDL IN CLOB, s_db_link_name In VARCHAR2, s_package_name VARCHAR2);
+  PROCEDURE HOUSEKEEPING_MASTER( p_max_age_days  IN INTEGER DEFAULT NULL  );
+  PROCEDURE ARCHIVE_HOST_PARTITIONS( p_db_link_name IN VARCHAR2, p_max_age_days  IN INTEGER DEFAULT NULL  );
+  PROCEDURE DROP_EVERYTHING;
+  PROCEDURE send_mail(   p_to   IN VARCHAR2,    p_subject   IN VARCHAR2,   p_clob_message   IN CLOB);
+  PROCEDURE GATHER_TABLE_STATS( p_table_name IN VARCHAR2);
+
+
+  -- exceptions
+  exc_EXECUTE_PLSQL_REMOTE INTEGER := -20001;
+  exc_EXECUTE_SQL_REMOTE INTEGER := -20002;
+  exc_EXECUTE_CLOB_REMOTE INTEGER := -20003;
+
+
+
+END DBHC_PKG;
+/
+
+
+
+
+
+  
